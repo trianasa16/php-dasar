@@ -1,64 +1,87 @@
 <?php
-// koneksi database
+
+session_start();
+
+if (!isset($_SESSION['login'])) {
+    if ($_SESSION['login'] != true) {
+        header("Location: login.php");
+        exit;
+    }
+}
+
 $mysqli = new mysqli('localhost', 'root', '', 'tedc');
 
-// query untuk mengambil data mahasiswa dengan program studi mereka
-$result = $mysqli->query(
-    "SELECT students.nim, students.nama, study_program.name 
-     FROM students 
-     INNER JOIN study_program ON students.study_program_id = study_program.id 
-     WHERE study_program.id = 11;"
-);
+$result = $mysqli->query("SELECT students.nim, students.nama, study_program.name 
+                         FROM students 
+                         LEFT JOIN study_program ON students.program_studi = study_program.id;
+                         ");
 
-// inisialisasi array kosong untuk menyimpan data yang diambil
 $mahasiswa = [];
-
-// Ambil data dari hasil queri dan simpan dalam array
 while ($row = $result->fetch_assoc()) {
-    $mahasiswa[] = $row;
+    array_push($mahasiswa, $row);
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Mahasiswa</title>
-
-    <!-- Include Bootstrap CSS for styling -->
-    <link 
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" 
-        rel="stylesheet" 
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" 
-        crossorigin="anonymous"
-    >
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daftar Mahasiswa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Judul halaman -->
-    <h1 class="text-center">Data Mahasiswa KA 2021</h1>
+    <div class="container mt-4">
+        <h2 class="mb-3 text-center">Daftar Mahasiswa Politeknik TEDC Bandung</h2>
+        <?php
+        if (isset($_SESSION['success_message'])) {
+            echo "<div class='alert alert-success' role='alert'>{$_SESSION['success_message']}</div>";
+            unset($_SESSION['success_message']);
+        }
 
-    <div class="container">
-        <!-- Tampilan tabel mahasiswa -->
-        <table class="table table-bordered table-hover">
-            <thead>
+        if (isset($_SESSION['error_message'])) {
+            echo "<div class='alert alert-danger' role='alert'>{$_SESSION['error_message']}</div>";
+            unset($_SESSION['error_message']);
+        }
+        ?>
+        <a href="tambah.php" class="btn btn-success mb-3">Tambah Mahasiswa</a>
+        <table class="table table-hover table-striped table-bordered">
+            <thead class="table-dark">
                 <tr>
-                    <th>NIM</th> 
-                    <th>Nama</th> 
+                    <th>No</th>
+                    <th>NIM</th>
+                    <th>Nama</th>
                     <th>Program Studi</th>
+                    <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- loop melalui array data mahasiswa dan menampilkan setiap baris -->
-                <?php foreach ($mahasiswa as $row): ?>
+                <?php $no = 1; foreach ($mahasiswa as $value) { ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['nim']); ?></td> <!-- students ID -->
-                        <td><?= htmlspecialchars($row['nama']); ?></td> <!-- students Name -->
-                        <td><?= htmlspecialchars($row['name']); ?></td> <!-- Study Program Name -->
+                        <td><?= $no++; ?></td>
+                        <td><?= $value['nim']; ?></td>
+                        <td><?= $value['nama']; ?></td>
+                        <td><?= $value['name'] === null ? 'NULL' : $value['name']; ?></td>
+                        <td>
+                            <a href="edit_mahasiswa.php?nim=<?= $value['nim']; ?>" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+                            <a href="hapus_mahasiswa.php?nim=<?= $value['nim']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
+                                <i class="bi bi-trash"></i> Hapus
+                            </a>
+                        </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php } ?>
             </tbody>
         </table>
     </div>
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+<?php
+unset($_SESSION['success']);
+unset($_SESSION['message']);
+
+?>
